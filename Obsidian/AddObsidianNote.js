@@ -9,13 +9,15 @@
 var fm = FileManager.iCloud();
 var url = args.shortcutParameter;
 
-var youtubeTitleKey = "videoTitle";
-var youtubeRegExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#\&\?]*).*/; //Regex to parse Yotube URLs and extract video id  
+const undefined = "undefined"
+const googleApiKey = "replace_with_API_key" //YoutubeAPI key: https://console.cloud.google.com/ && https://developers.google.com/youtube/v3/docs
+const youtubeRegExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#\&\?]*).*/; //Regex to  extract video_id from Yotube URLs
+const titleRegExp = "<title[^>]*>([^<]+)<\/title>";
 
 //Get file content from Shortcuts app
 var content = await formatDailyNoteContent(url);
 
-//Get the path to the Obsidian file
+//Get path to the Obsidian file
 var path = formatPath();
 
 createDailyNote(path, content);
@@ -52,17 +54,12 @@ async function formatDailyNoteContent(url){
 // Grab page title from HTML source
 async function extractTitle(url){
 
-  var result = "undefined";
-
   // Quick workaround to extract video title from Youtube pages via embeded URL: https://www.youtube.com/embed/{video_id}
   var match = url.match(youtubeRegExp);
-  if (match && match[7].length == 11){
-    url = 'https://www.youtube.com/embed/' + match[7];
-    
-    console.log(url);
 
-    result = extractVideoTitleYoutube(url);
-    return result;
+  if (match && match[7].length == 11){ 
+    //we have youtube URL and will continue with workaround through Youtube API 
+    return extractYoutubeVideoTitle(match[7])
   } 
   // Otherwise Grab <title> tag from page HTML source 
   else {
@@ -71,40 +68,32 @@ async function extractTitle(url){
     let res = await req.loadString();
 
     // Extract <title> tag from page HTML source 
-    let titleRegExp = new RegExp("<title[^>]*>([^<]+)<\/title>");
-    let titleMatch = res.match(titleRegExp);
+    let title = new RegExp(titleRegExp);
+    let titleMatch = res.match(title);
     
     if (titleMatch)
-      result = titleMatch[1];
+      return titleMatch[1];
+    else 
+      return undefined;
   }
-
-  return result;
 }
 
-// Quick workaround to extract video title from Youtube pages via embeded URL: https://www.youtube.com/embed/{video_id}
+// Quick workaround to extract video title from Youtube pages via Youtube API
 // Youtube pages doesn't load video description in a <title> tag
-async function extractVideoTitleYoutube(url){
-  
-  // Load HTML as a string using Request() https://docs.scriptable.app/request/
+async function extractYoutubeVideoTitle(id){
+
+  //using Youtube API to get video metadata by video_id
+  url = 'https://www.googleapis.com/youtube/v3/videos?part=snippet&id=' + id + '&key=' + googleApiKey;
+
+  // Load HTML as JSON using Request() https://docs.scriptable.app/request/
   let req = new Request(url);
-  let res = await req.loadString();
-  
-  // Removing escape characters from HTML/JSON string
-  let normilisedStr = res.replace(/\\/g, '').replace(/"/g, '');
+  let data = await req.loadJSON();
 
-  // Extracting title from embeded into HTML body videoTitle parameter: ...{"videoId":"value","videoShareUrl":"value","videoTitle":"value"}...
-  let startIndex = normilisedStr.indexOf(youtubeTitleKey) + youtubeTitleKey.length + 1; // Add additional character to address colon in json format: "key":"value"
-  let endIndex = startIndex;
-  while(normilisedStr[endIndex] != '}')
-  {
-    endIndex++;
-  }
-  let result = normilisedStr.substring(startIndex, endIndex);
-  
-  console.log(result)
-
-  return result;
-} 
+  if(data.items && data.items.length > 0)
+    return data.items[0].snippet.title
+  else
+    return undefined;
+}
 
 //Obsidian format for the new Daily Log file
 function formatNewFile(content){
