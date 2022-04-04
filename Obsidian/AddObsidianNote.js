@@ -10,9 +10,12 @@ var fm = FileManager.iCloud();
 var url = args.shortcutParameter;
 
 const undefined = "undefined"
-const googleApiKey = "replace_with_API_key" //YoutubeAPI key: https://console.cloud.google.com/ && https://developers.google.com/youtube/v3/docs
+const googleApiKey = "replace_with_API_key" //YoutubeAPI key: https://console.cloud.google.com/
 const youtubeRegExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#\&\?]*).*/; //Regex to  extract video_id from Yotube URLs
 const titleRegExp = "<title[^>]*>([^<]+)<\/title>";
+const newFileTemplate = `| Links | Tags |
+| ----- | ---- |\r\n`;
+
 
 //Get file content from Shortcuts app
 var content = await formatDailyNoteContent(url);
@@ -47,8 +50,8 @@ async function formatDailyNoteContent(url){
   // Get page title from URL
   let title = await extractTitle(url);
 
-  // Content format is: - (title)[url]
-  return '- [' + title +'](' + url +')';
+  // Content format should containe: [title](url)
+  return `| [${title.trim()}](${url}) |  |`;
 }
 
 // Grab page title from HTML source
@@ -83,7 +86,7 @@ async function extractTitle(url){
 async function extractYoutubeVideoTitle(id){
 
   //using Youtube API to get video metadata by video_id
-  url = 'https://www.googleapis.com/youtube/v3/videos?part=snippet&id=' + id + '&key=' + googleApiKey;
+  url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${googleApiKey}`;
 
   // Load HTML as JSON using Request() https://docs.scriptable.app/request/
   let req = new Request(url);
@@ -97,7 +100,7 @@ async function extractYoutubeVideoTitle(id){
 
 //Obsidian format for the new Daily Log file
 function formatNewFile(content){
-  return 'Tags: \n\nLinks:\n' + content;
+  return newFileTemplate + content;
 }
 
 function formatPath(){
