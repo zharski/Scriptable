@@ -23,6 +23,7 @@ var content = await formatDailyNoteContent(url);
 //Get path to the Obsidian file
 var path = formatPath();
 
+//Write daily note into an existing file or create a new one
 createDailyNote(path, content);
 
 // Tell Shortcuts that we're done (not strictly necessary)
@@ -56,29 +57,18 @@ async function formatDailyNoteContent(url){
 
 // Grab page title from HTML source
 async function extractTitle(url){
-
+  var title = undefined;
   // Quick workaround to extract video title from Youtube pages via embeded URL: https://www.youtube.com/embed/{video_id}
   var match = url.match(youtubeRegExp);
 
-  if (match && match[7].length == 11){ 
-    //we have youtube URL and will continue with workaround through Youtube API 
-    return extractYoutubeVideoTitle(match[7])
+  if (match && match[7].length == 11){ //we have youtube URL and will continue with workaround through Youtube API 
+    title = await extractYoutubeVideoTitle(match[7])
   } 
-  // Otherwise Grab <title> tag from page HTML source 
-  else {
-    // Load HTML as a string using Request() https://docs.scriptable.app/request/
-    let req = new Request(url);
-    let res = await req.loadString();
-
-    // Extract <title> tag from page HTML source 
-    let title = new RegExp(titleRegExp);
-    let titleMatch = res.match(title);
-    
-    if (titleMatch)
-      return titleMatch[1];
-    else 
-      return undefined;
+  else { // Otherwise Grab <title> tag from page HTML source 
+    title = await extractHTMLTitle(url);
   }
+
+  return cleanTitle(title);
 }
 
 // Quick workaround to extract video title from Youtube pages via Youtube API
@@ -86,7 +76,7 @@ async function extractTitle(url){
 async function extractYoutubeVideoTitle(id){
 
   //using Youtube API to get video metadata by video_id
-  url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${googleApiKey}`;
+  var url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${id}&key=${googleApiKey}`;
 
   // Load HTML as JSON using Request() https://docs.scriptable.app/request/
   let req = new Request(url);
@@ -96,6 +86,26 @@ async function extractYoutubeVideoTitle(id){
     return data.items[0].snippet.title
   else
     return undefined;
+}
+
+//Extracting title from HTML <title> tag
+async function extractHTMLTitle(url){
+  // Limitation of scriptable. Need to load HTML as a string using Request() https://docs.scriptable.app/request/
+  let req = new Request(url);
+  let res = await req.loadString();
+
+  // Extract <title> tag from page HTML source 
+  let title = new RegExp(titleRegExp);
+  let titleMatch = res.match(title);
+
+  if (titleMatch)
+    return titleMatch[1];
+  else 
+    return undefined;
+}
+
+function cleanTitle(title){
+  return title.replace('|', '-');
 }
 
 //Obsidian format for the new Daily Log file
