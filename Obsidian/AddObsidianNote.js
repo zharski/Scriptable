@@ -52,7 +52,7 @@ async function formatDailyNoteContent(url){
   let title = await extractTitle(url);
 
   // Content format should containe: [title](url)
-  return `| [${title.trim()}](${url}) |  |`;
+  return `| [${title}](${url}) |  |`;
 }
 
 // Grab page title from HTML source
@@ -105,7 +105,7 @@ async function extractHTMLTitle(url){
 }
 
 function cleanTitle(title){
-  return title.replace('|', '-');
+  return title.replace('|', '-').trim();
 }
 
 //Obsidian format for the new Daily Log file
