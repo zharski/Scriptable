@@ -50,9 +50,15 @@ function createDailyNote(path, newContent){
 async function formatDailyNoteContent(url){
   // Get page title from URL
   let title = await extractTitle(url);
+  var cleanURL = removeQueryStringParameters(url);
 
   // Content format should containe: [title](url)
-  return `| [${title}](${url}) |  |`;
+  return `| [${title}](${cleanURL}) |  |`;
+}
+
+//The regex /\?.*$/ matches a '?' character followed by any number of any characters, up to the end of the string. Reaplce will replace it with an empty string 
+function removeQueryStringParameters(url) {
+  return url.replace(/\?.*$/, '');
 }
 
 // Grab page title from HTML source
