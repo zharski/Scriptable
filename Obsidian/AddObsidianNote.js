@@ -10,7 +10,7 @@ var fm = FileManager.iCloud();
 var url = args.shortcutParameter;
 
 const undefined = "undefined"
-const googleApiKey = "replace_with_API_key" //YoutubeAPI key: https://console.cloud.google.com/
+const googleApiKey =  "replace_with_API_key" //YoutubeAPI key: https://console.cloud.google.com/
 const youtubeRegExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#\&\?]*).*/; //Regex to  extract video_id from Yotube URLs
 const titleRegExp = "<title[^>]*>([^<]+)<\/title>";
 const newFileTemplate = `| Links | Tags |
@@ -64,7 +64,7 @@ function removeQueryStringParameters(url) {
 // Grab page title from HTML source
 async function extractTitle(url){
   var title = undefined;
-  // Quick workaround to extract video title from Youtube pages via embeded URL: https://www.youtube.com/embed/{video_id}
+  // Quick workaround to extract video title from Youtube pages
   var match = url.match(youtubeRegExp);
 
   if (match && match[7].length == 11){ //we have youtube URL and will continue with workaround through Youtube API 
@@ -111,7 +111,8 @@ async function extractHTMLTitle(url){
 }
 
 function cleanTitle(title){
-  return title.replace('|', '-').trim();
+  var cleanedTitle = decodeHTML(title); // remove special characters from url
+  return cleanedTitle.replace('|', '-').trim();
 }
 
 //Obsidian format for the new Daily Log file
@@ -127,4 +128,25 @@ function formatPath(){
   //"daily_notes" is the name of the folder bookmark setting from Scriptable
   //You have to create it in Scriptable > Settings > File Bookmarks
   return fm.joinPath(fm.bookmarkedPath("daily_notes"), filename);
+}
+
+//Workaround for ECMAScript 6 (ES6)
+function decodeHTML(html) {
+  let entities = {
+      '#x27': "'",
+      '#x2F': "/",
+      '#x3C': "<",
+      '#x3E': ">",
+      '#x60': "`",
+      '#xA0': " ",
+      'amp': "&",
+      'lt': "<",
+      'gt': ">",
+      'nbsp': " ",
+      'quot': "\""
+  };
+  
+  return html.replace(/&([^;]+);/g, function(match, entity) {
+      return entities[entity] || match;
+  });
 }
