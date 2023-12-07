@@ -133,17 +133,22 @@ function formatPath(){
 //Workaround for ECMAScript 6 (ES6)
 function decodeHTML(html) {
   let entities = {
-      '#x27': "'",
-      '#x2F': "/",
-      '#x3C': "<",
-      '#x3E': ">",
-      '#x60': "`",
-      '#xA0': " ",
-      'amp': "&",
-      'lt': "<",
-      'gt': ">",
-      'nbsp': " ",
-      'quot': "\""
+      '#x27'  : "'",
+      '#039'  : "'",
+      '#39'   : "'",
+      '#8217' : "'",
+      '#8211' : "-",
+      '#x2d'  : "-",
+      '#x2F'  : "/",
+      '#x3C'  : "<",
+      '#x3E'  : ">",
+      '#x60'  : "`",
+      '#xA0'  : " ",
+      'amp'   : "&",
+      'lt'    : "<",
+      'gt'    : ">",
+      'nbsp'  : " ",
+      'quot'  : "\""
   };
   
   return html.replace(/&([^;]+);/g, function(match, entity) {
